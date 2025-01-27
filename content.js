@@ -43,14 +43,22 @@ function updateSum1() {
   const xpath1 = '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[1]/div[2]/div[1]/div/div/div[2]/span';
   const xpath2 = '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[1]/div[2]/div[2]/div/div/div[2]/span';
   const containerXPath = '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[1]/div[2]';
+  // Дополнительный контейнер для отображения суммы
+  const additionalContainerXPath = '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/div/div[2]/div/div[2]/div[1]/div[2]/div[1]/div[2]';
 
   const el1 = getElementByXPath(xpath1);
   const el2 = getElementByXPath(xpath2);
   const container = getElementByXPath(containerXPath);
+  const additionalContainer = getElementByXPath(additionalContainerXPath);
 
-  if (el1 && el2 && container) {
+  if (el1 && el2) {
     const sum = calculateSum(el1, el2);
-    displaySum(sum, container);
+    if (container) {
+      displaySum(sum, container);
+    }
+    if (additionalContainer) {
+      displaySum(sum, additionalContainer);
+    }
   }
 }
 
@@ -59,14 +67,22 @@ function updateSum2() {
   const xpath1 = '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[2]/div[2]/div[1]/div/div/div[2]/span';
   const xpath2 = '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[2]/div[2]/div[2]/div/div/div[2]/span';
   const containerXPath = '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[2]/div[2]';
+  // Дополнительный контейнер для отображения суммы
+  const additionalContainerXPath = '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/div/div[2]/div/div[2]/div[1]/div[2]/div[2]/div[2]';
 
   const el1 = getElementByXPath(xpath1);
   const el2 = getElementByXPath(xpath2);
   const container = getElementByXPath(containerXPath);
+  const additionalContainer = getElementByXPath(additionalContainerXPath);
 
-  if (el1 && el2 && container) {
+  if (el1 && el2) {
     const sum = calculateSum(el1, el2);
-    displaySum(sum, container);
+    if (container) {
+      displaySum(sum, container);
+    }
+    if (additionalContainer) {
+      displaySum(sum, additionalContainer);
+    }
   }
 }
 
