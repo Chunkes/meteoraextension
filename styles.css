@@ -1,0 +1,49 @@
+.value-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 9px;
+  padding: 5px;
+  position: absolute;
+  right: 100%; /* Размещаем слева от элемента */
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 10px; /* Отступ от элемента */
+}
+
+.value-button {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Центрируем текст */
+  height: 1.5rem; /* h-6 */
+  width: 40px; /* Фиксированная ширина */
+  padding-left: .5rem; /* px-2 */
+  padding-right: .5rem;
+  border-radius: 9999px; /* rounded-full */
+  font-size: 10px; /* text-[10px] */
+  font-weight: 600; /* font-semibold */
+  cursor: pointer;
+  color: #7c7d8d;
+  background-color: rgb(39 41 67); /* dark:bg-[#272943] */
+  position: relative;
+  /* Свечение голубым цветом */
+  box-shadow: 0 0 5px rgba(6, 174, 212, 0.3),
+              0 0 10px rgba(6, 174, 212, 0.2),
+              0 0 15px rgba(6, 174, 212, 0.1);
+  transition: all 0.3s ease;
+}
+
+/* Стили для темной темы */
+@media (prefers-color-scheme: dark) {
+  .value-button {
+    color: #7c7d8d;
+  }
+}
+
+.value-button:hover {
+  opacity: 0.8;
+  /* Усиленное голубое свечение при наведении */
+  box-shadow: 0 0 7px rgba(6, 174, 212, 0.4),
+              0 0 15px rgba(6, 174, 212, 0.3),
+              0 0 22px rgba(6, 174, 212, 0.2);
+  transform: scale(1.05);
+} 
