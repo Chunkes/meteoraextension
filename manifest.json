@@ -4,9 +4,9 @@
   "version": "1.0",
   "description": "Добавляет кнопки для установки значений в поле ввода на сайте meteora.ag",
   "permissions": [
+    "storage",
     "activeTab",
     "scripting",
-    "storage",
     "tabs"
   ],
   "host_permissions": [
