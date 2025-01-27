@@ -110,17 +110,14 @@ function getNumberFromElement(xpath) {
   return 0;
 }
 
-// Функция для обновления суммы
+// Функция для обновления первой суммы
 function updateSum() {
-  // Обновленные XPath селекторы для поиска элементов с суммами
   const xpath1 = '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[1]/div[2]/div[1]/div/div/div[2]/span';
   const xpath2 = '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[1]/div[2]/div[2]/div/div/div[2]/span';
   
-  // Получаем элементы напрямую
   const element1 = getElementByXPath(xpath1);
   const element2 = getElementByXPath(xpath2);
   
-  // Получаем значения и выводим их в консоль для отладки
   const num1 = element1 ? parseFloat(element1.textContent.replace('$', '').replace('(', '').replace(')', '')) * (element1.textContent.includes('(') ? -1 : 1) : 0;
   const num2 = element2 ? parseFloat(element2.textContent.replace('$', '').replace('(', '').replace(')', '')) * (element2.textContent.includes('(') ? -1 : 1) : 0;
   
@@ -128,36 +125,82 @@ function updateSum() {
   console.log('Значение 2:', element2?.textContent, '=', num2);
   
   const sum = num1 + num2;
-  console.log('Сумма:', sum);
+  console.log('TOTAL 1:', sum);
 
-  const sumContainer = getElementByXPath('//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[1]/div[2]');
+  displaySum(sum, '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[1]/div[2]');
+}
+
+// Функция для обновления второй суммы
+function updateSum2() {
+  const xpath1 = '//*[@id="radix-:r0:"]/div[1]/div[2]/div[1]/div[2]/div[1]/div/div[2]/span';
+  const xpath2 = '//*[@id="radix-:r0:"]/div[1]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span';
+  
+  const element1 = getElementByXPath(xpath1);
+  const element2 = getElementByXPath(xpath2);
+  
+  const num1 = element1 ? parseFloat(element1.textContent.replace('$', '').replace('(', '').replace(')', '')) * (element1.textContent.includes('(') ? -1 : 1) : 0;
+  const num2 = element2 ? parseFloat(element2.textContent.replace('$', '').replace('(', '').replace(')', '')) * (element2.textContent.includes('(') ? -1 : 1) : 0;
+  
+  console.log('Значение 3:', element1?.textContent, '=', num1);
+  console.log('Значение 4:', element2?.textContent, '=', num2);
+  
+  const sum = num1 + num2;
+  console.log('TOTAL 2:', sum);
+
+  displaySum(sum, '//*[@id="radix-:r0:"]/div[1]/div[2]/div[1]/div[2]');
+}
+
+// Функция для обновления третьей суммы
+function updateSum3() {
+  const xpath1 = '//*[@id="radix-:r0:"]/div[1]/div[2]/div[2]/div[2]/div[1]/div/div[2]/span';
+  const xpath2 = '//*[@id="radix-:r0:"]/div[1]/div[2]/div[2]/div[2]/div[2]/div/div[2]/span';
+  
+  const element1 = getElementByXPath(xpath1);
+  const element2 = getElementByXPath(xpath2);
+  
+  const num1 = element1 ? parseFloat(element1.textContent.replace('$', '').replace('(', '').replace(')', '')) * (element1.textContent.includes('(') ? -1 : 1) : 0;
+  const num2 = element2 ? parseFloat(element2.textContent.replace('$', '').replace('(', '').replace(')', '')) * (element2.textContent.includes('(') ? -1 : 1) : 0;
+  
+  console.log('Значение 5:', element1?.textContent, '=', num1);
+  console.log('Значение 6:', element2?.textContent, '=', num2);
+  
+  const sum = num1 + num2;
+  console.log('TOTAL 3:', sum);
+
+  displaySum(sum, '//*[@id="radix-:r0:"]/div[1]/div[2]/div[2]/div[2]');
+}
+
+// Общая функция для отображения суммы
+function displaySum(sum, containerXPath) {
+  const sumContainer = getElementByXPath(containerXPath);
   if (sumContainer) {
     let sumSpan = sumContainer.querySelector('.calculated-sum');
     if (!sumSpan) {
       sumSpan = document.createElement('span');
       sumSpan.className = 'calculated-sum';
       sumSpan.style.cssText = `
-        color: #7c7d8d;
-        font-size: 12px;
+        color: #ffffff;
+        font-size: 17px;
         font-weight: 600;
         margin-left: 10px;
       `;
       sumContainer.appendChild(sumSpan);
     }
     
-    // Форматируем сумму в долларах
     if (sum < 0) {
-      sumSpan.textContent = `Сумма: ($${Math.abs(sum).toFixed(2)})`;
+      sumSpan.textContent = `TOTAL: ($${Math.abs(sum).toFixed(2)})`;
     } else {
-      sumSpan.textContent = `Сумма: $${Math.abs(sum).toFixed(2)}`;
+      sumSpan.textContent = `TOTAL: $${Math.abs(sum).toFixed(2)}`;
     }
   }
 }
 
-// Функция для наблюдения за изменениями
+// Обновленная функция наблюдения
 function observeChanges() {
   const observer = new MutationObserver(() => {
     updateSum();
+    updateSum2();
+    updateSum3();
   });
 
   const config = { 
@@ -166,24 +209,33 @@ function observeChanges() {
     childList: true 
   };
 
-  // Наблюдаем за родительскими элементами
-  const xpath1 = '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[1]/div[2]/div[1]/div/div/div[2]';
-  const xpath2 = '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[1]/div[2]/div[2]/div/div/div[2]';
+  // Наблюдаем за всеми элементами
+  const xpaths = [
+    '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[1]/div[2]/div[1]/div/div/div[2]',
+    '//*[@id="__next"]/div[1]/div[3]/div/div[2]/div/div[2]/div[1]/div/div[2]/div[1]/div[2]/div[2]/div/div/div[2]',
+    '//*[@id="radix-:r1:"]/div[1]/div[2]/div[1]/div[2]/div[1]/div/div[2]',
+    '//*[@id="radix-:r1:"]/div[1]/div[2]/div[1]/div[2]/div[2]/div/div[2]',
+    '//*[@id="radix-:r0:"]/div[1]/div[2]/div[2]/div[2]/div[1]/div/div[2]',
+    '//*[@id="radix-:r0:"]/div[1]/div[2]/div[2]/div[2]/div[2]/div/div[2]'
+  ];
   
-  const element1 = getElementByXPath(xpath1);
-  const element2 = getElementByXPath(xpath2);
-  
-  if (element1) observer.observe(element1, config);
-  if (element2) observer.observe(element2, config);
+  xpaths.forEach(xpath => {
+    const element = getElementByXPath(xpath);
+    if (element) observer.observe(element, config);
+  });
 }
 
 // Запускаем наблюдение при загрузке страницы
 window.addEventListener('load', () => {
   updateSum();
+  updateSum2();
+  updateSum3();
   observeChanges();
 });
 
-// Периодически проверяем наличие элементов и обновляем сумму
+// Периодически проверяем наличие элементов и обновляем суммы
 setInterval(() => {
   updateSum();
+  updateSum2();
+  updateSum3();
 }, 1000); 
