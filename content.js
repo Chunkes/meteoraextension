@@ -358,9 +358,13 @@ function createPresetsMenu() {
   return menu;
 }
 
-// ПРЕСЕТЫ: Создание кнопок пресетов
-function createPresetSelector() {
+// ПРЕСЕТЫ: Создание селектора пресетов
+function createPresetSelector(input, targetContainer) {
+  // Проверяем, не создан ли уже селектор пресетов
+  if (document.querySelector('.preset-selector')) return;
+
   const container = document.createElement('div');
+  container.className = 'preset-selector';
   container.style.cssText = `
     display: flex;
     align-items: center;
@@ -390,8 +394,10 @@ function createPresetSelector() {
       e.preventDefault();
       const presets = await loadPresets();
       const selectedPreset = presets[num - 1];
-      const buttons = document.querySelectorAll('.value-button');
-      buttons.forEach((btn, i) => {
+      
+      // Обновляем значения кнопок
+      const valueButtons = document.querySelectorAll('.value-button');
+      valueButtons.forEach((btn, i) => {
         btn.textContent = selectedPreset[i];
         btn.dataset.value = selectedPreset[i];
       });
@@ -434,12 +440,21 @@ function createPresetSelector() {
   };
 
   container.appendChild(settingsButton);
+
+  // Подсвечиваем первый пресет как активный
+  const firstPresetButton = container.querySelector('button');
+  if (firstPresetButton) {
+    firstPresetButton.style.backgroundColor = 'rgb(55 57 99)';
+  }
+
   return container;
 }
 
 // Обновляем функцию createButtons
 async function createButtons(input, targetContainer) {
   if (!input || !targetContainer) return;
+  
+  // Проверяем, не созданы ли уже кнопки
   if (document.querySelector('.value-buttons')) return;
   
   const presets = await loadPresets();
@@ -449,7 +464,7 @@ async function createButtons(input, targetContainer) {
   buttonsContainer.className = 'value-buttons';
   buttonsContainer.style.cssText = `
     display: flex;
-    gap: 4px;
+    gap: 10px;
     position: absolute;
     z-index: 1000;
     top: 50%;
@@ -505,7 +520,7 @@ async function createButtons(input, targetContainer) {
     targetElement.appendChild(buttonsContainer);
   }
 
-  // Добавляем селектор пресетов
+  // Добавляем селектор пресетов только если его еще нет
   const presetSelectorContainer = document.evaluate(
     '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[1]',
     document,
@@ -514,8 +529,8 @@ async function createButtons(input, targetContainer) {
     null
   ).singleNodeValue;
 
-  if (presetSelectorContainer) {
-    presetSelectorContainer.appendChild(createPresetSelector());
+  if (presetSelectorContainer && !document.querySelector('.preset-selector')) {
+    presetSelectorContainer.appendChild(createPresetSelector(input, targetContainer));
   }
 }
 
