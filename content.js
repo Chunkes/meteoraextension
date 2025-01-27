@@ -170,6 +170,9 @@ function savePresets(presets) {
   });
 }
 
+// Добавим глобальную переменную для хранения активного пресета
+let activePresetIndex = 0;
+
 // ПРЕСЕТЫ: Создание меню настроек
 function createPresetsMenu() {
   const menu = document.createElement('div');
@@ -394,6 +397,7 @@ function createPresetSelector(input, targetContainer) {
       e.preventDefault();
       const presets = await loadPresets();
       const selectedPreset = presets[num - 1];
+      activePresetIndex = num - 1; // Сохраняем индекс активного пресета
       
       // Обновляем значения кнопок
       const valueButtons = document.querySelectorAll('.value-button');
@@ -534,16 +538,17 @@ async function createButtons(input, targetContainer) {
   }
 }
 
-// Функция обновления кнопок
+// Обновим функцию updateButtons
 async function updateButtons() {
   const buttons = document.querySelectorAll('.value-button');
   if (buttons.length === 0) return;
   
   const presets = await loadPresets();
-  const currentPreset = presets[0];
+  const currentPreset = presets[activePresetIndex]; // Используем активный пресет
   
   buttons.forEach((button, i) => {
     button.textContent = currentPreset[i];
+    button.dataset.value = currentPreset[i];
   });
 }
 
