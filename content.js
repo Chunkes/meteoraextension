@@ -148,10 +148,14 @@ function createButtons(input, targetContainer) {
   buttonsContainer.className = 'value-buttons';
   buttonsContainer.style.cssText = `
     display: flex;
-    gap: 8px;
-    margin-top: 8px;
+    gap: 4px;
     position: absolute;
     z-index: 1000;
+    top: 50%;
+    right: 100%;
+    transform: translateY(-50%);
+    margin-right: 8px;
+    pointer-events: none;
   `;
 
   [0.5, 1, 1.5].forEach(value => {
@@ -169,6 +173,7 @@ function createButtons(input, targetContainer) {
       text-align: center;
       font-size: 14px;
       transition: background 0.2s;
+      pointer-events: auto;
     `;
     
     button.onmouseover = () => {
@@ -193,10 +198,19 @@ function createButtons(input, targetContainer) {
     buttonsContainer.appendChild(button);
   });
 
-  // Очищаем контейнер перед добавлением
-  targetContainer.innerHTML = '';
-  targetContainer.style.position = 'relative';
-  targetContainer.appendChild(buttonsContainer);
+  // Находим целевой элемент для позиционирования кнопок
+  const targetElement = document.evaluate(
+    '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[2]/div[2]',
+    document,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+    null
+  ).singleNodeValue;
+
+  if (targetElement) {
+    targetElement.style.position = 'relative';
+    targetElement.appendChild(buttonsContainer);
+  }
   
   console.log('Кнопки добавлены');
 }
