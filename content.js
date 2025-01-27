@@ -76,17 +76,161 @@ function updateAllSums() {
   updateSum2();
 }
 
-// Запускаем обновление каждые 100мс
+// Запускаем обновление сумм каждые 100мс
 setInterval(updateAllSums, 100);
 
-// Запускаем при загрузке страницы
+// Запускаем обновление сумм при загрузке страницы
 window.addEventListener('load', updateAllSums);
 
-// Наблюдаем за изменениями в DOM
-const observer = new MutationObserver(updateAllSums);
-observer.observe(document.body, {
+// Наблюдаем за изменениями в DOM для сумм
+const sumObserver = new MutationObserver(updateAllSums);
+sumObserver.observe(document.body, {
   childList: true,
   subtree: true,
   attributes: true,
   characterData: true
-}); 
+});
+
+// КНОПКИ: Функция для проверки нужной страницы
+function isTargetPage() {
+  // Проверяем URL или наличие определенных элементов на странице
+  return window.location.href.includes('/transfer') || 
+         document.querySelector('form') !== null;
+}
+
+// КНОПКИ: Функция для ожидания появления элементов
+function waitForElements(maxAttempts = 50) {
+  let attempts = 0;
+  
+  function checkElements() {
+    if (!isTargetPage()) return;
+    
+    const input = document.evaluate(
+      '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[1]/input',
+      document,
+      null,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+    ).singleNodeValue;
+
+    const targetContainer = document.evaluate(
+      '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[2]',
+      document,
+      null,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+    ).singleNodeValue;
+
+    if (input && targetContainer) {
+      createButtons(input, targetContainer);
+      return;
+    }
+
+    attempts++;
+    if (attempts < maxAttempts) {
+      setTimeout(checkElements, 100); // Проверяем каждые 100мс
+    }
+  }
+  
+  checkElements();
+}
+
+// КНОПКИ: Функция для создания кнопок
+function createButtons(input, targetContainer) {
+  if (!input || !targetContainer) return;
+  
+  // Проверяем, не созданы ли уже кнопки
+  if (document.querySelector('.value-buttons')) return;
+  
+  console.log('Создаем кнопки');
+  
+  const buttonsContainer = document.createElement('div');
+  buttonsContainer.className = 'value-buttons';
+  buttonsContainer.style.cssText = `
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    position: absolute;
+    z-index: 1000;
+  `;
+
+  [0.5, 1, 1.5].forEach(value => {
+    const button = document.createElement('button');
+    button.className = 'value-button';
+    button.textContent = value;
+    button.style.cssText = `
+      padding: 4px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #1a1a1a;
+      color: white;
+      min-width: 40px;
+      text-align: center;
+      font-size: 14px;
+      transition: background 0.2s;
+    `;
+    
+    button.onmouseover = () => {
+      button.style.background = '#2a2a2a';
+    };
+    
+    button.onmouseout = () => {
+      button.style.background = '#1a1a1a';
+    };
+    
+    button.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.focus();
+      
+      return false;
+    };
+    
+    buttonsContainer.appendChild(button);
+  });
+
+  // Очищаем контейнер перед добавлением
+  targetContainer.innerHTML = '';
+  targetContainer.style.position = 'relative';
+  targetContainer.appendChild(buttonsContainer);
+  
+  console.log('Кнопки добавлены');
+}
+
+// Отслеживаем изменения URL
+let lastUrl = location.href;
+new MutationObserver(() => {
+  const url = location.href;
+  if (url !== lastUrl) {
+    lastUrl = url;
+    console.log('URL изменился, проверяем элементы');
+    waitForElements();
+  }
+}).observe(document, { subtree: true, childList: true });
+
+// Отслеживаем изменения в DOM
+const buttonObserver = new MutationObserver((mutations) => {
+  if (!document.querySelector('.value-buttons') && isTargetPage()) {
+    waitForElements();
+  }
+});
+
+buttonObserver.observe(document.body, {
+  childList: true,
+  subtree: true
+});
+
+// Запускаем проверку при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => waitForElements());
+window.addEventListener('load', () => waitForElements());
+
+// Периодически проверяем
+setInterval(() => {
+  if (isTargetPage() && !document.querySelector('.value-buttons')) {
+    waitForElements();
+  }
+}, 1000); 
