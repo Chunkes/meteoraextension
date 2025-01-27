@@ -179,37 +179,151 @@ function createPresetsMenu() {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: #1a1a1a;
-    padding: 20px;
-    border-radius: 8px;
+    background: rgba(28, 28, 28, 0.95);
+    padding: 16px;
+    border-radius: 12px;
     z-index: 10000;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
     display: none;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 280px;
   `;
 
   let presetsHtml = '';
   for (let i = 0; i < 3; i++) {
     presetsHtml += `
-      <div class="preset-row" style="margin-bottom: 15px;">
-        <div style="margin-bottom: 5px; color: white;">Пресет ${i + 1}:</div>
-        <div style="display: flex; gap: 5px;">
-          <input type="number" step="0.1" class="preset-input" style="width: 60px; padding: 4px;">
-          <input type="number" step="0.1" class="preset-input" style="width: 60px; padding: 4px;">
-          <input type="number" step="0.1" class="preset-input" style="width: 60px; padding: 4px;">
+      <div class="preset-row" style="margin-bottom: 12px;">
+        <div style="
+          margin-bottom: 4px; 
+          color: rgba(255, 255, 255, 0.9);
+          font-size: 13px;
+          font-weight: 500;
+          letter-spacing: 0.5px;
+        ">Пресет ${i + 1}</div>
+        <div style="
+          display: flex; 
+          gap: 6px;
+          background: rgba(255, 255, 255, 0.05);
+          padding: 8px;
+          border-radius: 6px;
+        ">
+          <input type="number" step="0.1" class="preset-input" style="
+            width: 70px;
+            padding: 6px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s;
+          ">
+          <input type="number" step="0.1" class="preset-input" style="
+            width: 70px;
+            padding: 6px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s;
+          ">
+          <input type="number" step="0.1" class="preset-input" style="
+            width: 70px;
+            padding: 6px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s;
+          ">
         </div>
       </div>
     `;
   }
 
   menu.innerHTML = `
+    <div style="
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    ">
+      <h3 style="
+        margin: 0;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+      ">Настройка пресетов</h3>
+    </div>
     ${presetsHtml}
-    <div style="display: flex; justify-content: space-between; margin-top: 20px;">
-      <button class="save-presets" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Сохранить</button>
-      <button class="close-menu" style="padding: 8px 16px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Закрыть</button>
+    <div style="
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    ">
+      <button class="save-presets" style="
+        padding: 6px 12px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+      ">Сохранить</button>
+      <button class="close-menu" style="
+        padding: 6px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s;
+      ">Закрыть</button>
     </div>
   `;
 
   document.body.appendChild(menu);
+
+  // Добавляем эффекты наведения для инпутов
+  const inputs = menu.querySelectorAll('.preset-input');
+  inputs.forEach(input => {
+    input.addEventListener('focus', () => {
+      input.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+      input.style.background = 'rgba(0, 0, 0, 0.3)';
+    });
+    input.addEventListener('blur', () => {
+      input.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+      input.style.background = 'rgba(0, 0, 0, 0.2)';
+    });
+  });
+
+  // Добавляем эффекты наведения для кнопок
+  const saveButton = menu.querySelector('.save-presets');
+  saveButton.addEventListener('mouseover', () => {
+    saveButton.style.background = '#45a049';
+  });
+  saveButton.addEventListener('mouseout', () => {
+    saveButton.style.background = '#4CAF50';
+  });
+
+  const closeButton = menu.querySelector('.close-menu');
+  closeButton.addEventListener('mouseover', () => {
+    closeButton.style.background = 'rgba(255, 255, 255, 0.15)';
+  });
+  closeButton.addEventListener('mouseout', () => {
+    closeButton.style.background = 'rgba(255, 255, 255, 0.1)';
+  });
 
   // Загружаем сохраненные пресеты
   loadPresets().then(presets => {
@@ -234,7 +348,6 @@ function createPresetsMenu() {
     }
     await savePresets(newPresets);
     menu.style.display = 'none';
-    // Обновляем кнопки с новыми значениями
     updateButtons();
   };
 
@@ -260,25 +373,19 @@ function createPresetSelector() {
     const button = document.createElement('button');
     button.textContent = `Пресет ${num}`;
     button.style.cssText = `
-      padding: 4px 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background: #1a1a1a;
-      color: white;
+      display: flex;
+      align-items: center;
+      height: 1.5rem;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+      border-radius: 9999px;
+      background-color: rgb(39 41 67);
+      color: hsla(0, 0%, 100%, .4);
       cursor: pointer;
-      min-width: 80px;
-      transition: background 0.2s;
+      font-size: 10px;
+      font-weight: 600;
     `;
 
-    button.onmouseover = () => {
-      button.style.background = '#2a2a2a';
-    };
-
-    button.onmouseout = () => {
-      button.style.background = '#1a1a1a';
-    };
-
-    // Обработчик клика по кнопке пресета
     button.onclick = async (e) => {
       e.preventDefault();
       const presets = await loadPresets();
@@ -291,9 +398,9 @@ function createPresetSelector() {
 
       // Подсвечиваем активный пресет
       container.querySelectorAll('button').forEach(btn => {
-        btn.style.border = '1px solid #ccc';
+        btn.style.backgroundColor = 'rgb(39 41 67)';
       });
-      button.style.border = '1px solid #4CAF50';
+      button.style.backgroundColor = 'rgb(55 57 99)';
     };
 
     container.appendChild(button);
@@ -303,12 +410,17 @@ function createPresetSelector() {
   const settingsButton = document.createElement('button');
   settingsButton.textContent = '⚙️';
   settingsButton.style.cssText = `
-    padding: 4px 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: #1a1a1a;
-    color: white;
+    display: flex;
+    align-items: center;
+    height: 1.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    border-radius: 9999px;
+    background-color: rgb(39 41 67);
+    color: hsla(0, 0%, 100%, .4);
     cursor: pointer;
+    font-size: 10px;
+    font-weight: 600;
   `;
 
   let presetsMenu = document.querySelector('.presets-menu');
@@ -322,15 +434,6 @@ function createPresetSelector() {
   };
 
   container.appendChild(settingsButton);
-
-  // Подсвечиваем первый пресет как активный
-  setTimeout(() => {
-    const firstPresetButton = container.querySelector('button');
-    if (firstPresetButton) {
-      firstPresetButton.style.border = '1px solid #4CAF50';
-    }
-  }, 0);
-
   return container;
 }
 
@@ -356,33 +459,25 @@ async function createButtons(input, targetContainer) {
     pointer-events: none;
   `;
 
-  // Добавляем кнопки пресета
   currentPreset.forEach(value => {
     const button = document.createElement('button');
     button.className = 'value-button';
     button.textContent = value;
     button.dataset.value = value;
     button.style.cssText = `
-      padding: 4px 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      height: 1.5rem;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+      border-radius: 9999px;
+      background-color: rgb(39 41 67);
+      color: hsla(0, 0%, 100%, .4);
       cursor: pointer;
-      background: #1a1a1a;
-      color: white;
-      min-width: 40px;
-      text-align: center;
-      font-size: 14px;
-      transition: background 0.2s;
+      font-size: 10px;
+      font-weight: 600;
       pointer-events: auto;
     `;
-    
-    button.onmouseover = () => {
-      button.style.background = '#2a2a2a';
-    };
-    
-    button.onmouseout = () => {
-      button.style.background = '#1a1a1a';
-    };
     
     button.onclick = (e) => {
       e.preventDefault();
