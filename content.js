@@ -206,7 +206,6 @@ function createPresetsMenu() {
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     min-width: 280px;
-    cursor: move;
   `;
 
   // Добавляем обработчики для перетаскивания
@@ -218,38 +217,32 @@ function createPresetsMenu() {
   let xOffset = 0;
   let yOffset = 0;
 
-  menu.addEventListener('mousedown', dragStart);
-  document.addEventListener('mousemove', drag);
-  document.addEventListener('mouseup', dragEnd);
-
   function dragStart(e) {
-    initialX = e.clientX - xOffset;
-    initialY = e.clientY - yOffset;
-
-    if (e.target === menu) {
+    if (e.target.closest('.menu-header')) {
       isDragging = true;
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
     }
   }
 
   function drag(e) {
     if (isDragging) {
       e.preventDefault();
-      
       currentX = e.clientX - initialX;
       currentY = e.clientY - initialY;
-
       xOffset = currentX;
       yOffset = currentY;
-
-      menu.style.transform = `translate(${currentX}px, ${currentY}px)`;
+      menu.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
     }
   }
 
-  function dragEnd(e) {
-    initialX = currentX;
-    initialY = currentY;
+  function dragEnd() {
     isDragging = false;
   }
+
+  menu.addEventListener('mousedown', dragStart);
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('mouseup', dragEnd);
 
   let presetsHtml = '';
   for (let i = 0; i < 3; i++) {
@@ -308,16 +301,18 @@ function createPresetsMenu() {
   }
 
   menu.innerHTML = `
-    <div style="
+    <div class="menu-header" style="
       margin-bottom: 16px;
       padding-bottom: 12px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: move;
     ">
       <h3 style="
         margin: 0;
         color: white;
         font-size: 16px;
         font-weight: 600;
+        user-select: none;
       ">Preset Settings</h3>
     </div>
     ${presetsHtml}
