@@ -1,16 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <style>
     body {
-      width: 200px;
-      padding: 10px;
+      width: 250px;
+      padding: 16px;
+      font-family: Arial, sans-serif;
+    }
+    .feature-container {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 8px;
+    }
+    .feature-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .feature-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
     }
     .switch {
       position: relative;
       display: inline-block;
-      width: 60px;
-      height: 34px;
+      width: 46px;
+      height: 24px;
     }
     .switch input {
       opacity: 0;
@@ -25,38 +44,73 @@
       right: 0;
       bottom: 0;
       background-color: #ccc;
-      transition: .4s;
-      border-radius: 34px;
+      transition: .3s;
+      border-radius: 24px;
     }
     .slider:before {
       position: absolute;
       content: "";
-      height: 26px;
-      width: 26px;
-      left: 4px;
-      bottom: 4px;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
       background-color: white;
-      transition: .4s;
+      transition: .3s;
       border-radius: 50%;
     }
     input:checked + .slider {
       background-color: #2196F3;
     }
     input:checked + .slider:before {
-      transform: translateX(26px);
+      transform: translateX(22px);
     }
-    .label {
-      margin-left: 70px;
-      line-height: 34px;
+    .feature-description {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
     }
   </style>
 </head>
 <body>
-  <label class="switch">
-    <input type="checkbox" id="toggleSwitch">
-    <span class="slider"></span>
-  </label>
-  <span class="label">Включить кнопки</span>
+  <div class="feature-container">
+    <div class="feature-header">
+      <span class="feature-title">Fee Buttons</span>
+      <label class="switch">
+        <input type="checkbox" id="feeButtonsToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="feature-description">
+      Quick fee adjustment using buttons
+    </div>
+  </div>
+
+  <div class="feature-container">
+    <div class="feature-header">
+      <span class="feature-title">Sum Calculator</span>
+      <label class="switch">
+        <input type="checkbox" id="sumCalculatorToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="feature-description">
+      Automatic calculation and display of sums
+    </div>
+  </div>
+
+  <div class="feature-container">
+    <div class="feature-header">
+      <span class="feature-title">Size Buttons</span>
+      <label class="switch">
+        <input type="checkbox" id="valueButtonsToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="feature-description">
+      Presets and quick value input
+    </div>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html> 

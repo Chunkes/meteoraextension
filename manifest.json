@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Meteora Input Setter",
   "version": "1.0",
-  "description": "Добавляет кнопки для установки значений в поле ввода на сайте meteora.ag",
+  "description": "Adds functionality to Meteora interface",
   "permissions": [
     "storage",
     "activeTab",
@@ -12,6 +12,9 @@
   "host_permissions": [
     "https://edge.meteora.ag/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html"
   },

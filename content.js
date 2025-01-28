@@ -1,3 +1,97 @@
+// Глобальная переменная для хранения состояния
+let extensionEnabled = false;
+
+// Состояния функций
+let features = {
+  feeButtons: false,
+  sumCalculator: false,
+  valueButtons: false
+};
+
+// Функция для безопасного доступа к chrome API
+function isChromeAPIAvailable() {
+  try {
+    return typeof chrome !== 'undefined' && 
+           chrome.runtime && 
+           chrome.runtime.id && 
+           chrome.storage;
+  } catch {
+    return false;
+  }
+}
+
+// Функция для проверки состояния расширения без использования chrome API
+function getExtensionState() {
+  try {
+    return localStorage.getItem('extensionEnabled') === 'true';
+  } catch {
+    return false;
+  }
+}
+
+// Функция для сохранения состояния расширения локально
+function setExtensionState(enabled) {
+  try {
+    localStorage.setItem('extensionEnabled', enabled);
+    extensionEnabled = enabled;
+  } catch (error) {
+    console.log('Error saving extension state:', error);
+  }
+}
+
+// Функция для проверки состояния расширения
+async function checkExtensionState() {
+  try {
+    if (!isChromeAPIAvailable()) {
+      extensionEnabled = getExtensionState();
+      return extensionEnabled;
+    }
+
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['enabled'], function(result) {
+        if (chrome.runtime.lastError) {
+          extensionEnabled = getExtensionState();
+        } else {
+          extensionEnabled = result.enabled === true;
+          setExtensionState(extensionEnabled);
+        }
+        resolve(extensionEnabled);
+      });
+    });
+  } catch {
+    extensionEnabled = getExtensionState();
+    return extensionEnabled;
+  }
+}
+
+// Функция для очистки элементов конкретной функции
+function cleanupFeature(feature) {
+  switch (feature) {
+    case 'feeButtons':
+      const feeElements = document.querySelectorAll('.quick-fee-buttons, .fee-settings-menu');
+      feeElements.forEach(el => el.remove());
+      break;
+      
+    case 'sumCalculator':
+      const sumElements = document.querySelectorAll('.calculated-sum');
+      sumElements.forEach(el => el.remove());
+      if (window.sumUpdateInterval) {
+        clearInterval(window.sumUpdateInterval);
+        window.sumUpdateInterval = null;
+      }
+      if (window.sumObserver) {
+        window.sumObserver.disconnect();
+        window.sumObserver = null;
+      }
+      break;
+      
+    case 'valueButtons':
+      const valueElements = document.querySelectorAll('.value-buttons, .preset-selector, .presets-menu');
+      valueElements.forEach(el => el.remove());
+      break;
+  }
+}
+
 // Функция для поиска элементов по XPath
 function getElementByXPath(xpath) {
   return document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
@@ -92,74 +186,49 @@ function updateAllSums() {
   updateSum2();
 }
 
-// Запускаем обновление сумм каждые 100мс
-setInterval(updateAllSums, 100);
-
-// Запускаем обновление сумм при загрузке страницы
-window.addEventListener('load', updateAllSums);
-
-// Наблюдаем за изменениями в DOM для сумм
-const sumObserver = new MutationObserver(updateAllSums);
-sumObserver.observe(document.body, {
-  childList: true,
-  subtree: true,
-  attributes: true,
-  characterData: true
-});
-
-// КНОПКИ: Функция для проверки нужной страницы
-function isTargetPage() {
-  return window.location.href.includes('/transfer') || 
-         document.querySelector('form') !== null;
-}
-
-// КНОПКИ: Функция для ожидания появления элементов
-function waitForElements(maxAttempts = 50) {
+// Обновим функцию waitForElements
+async function waitForElements(maxAttempts = 50) {
+  if (!features.valueButtons && !features.feeButtons) return;
+  
   let attempts = 0;
   
-  function checkElements() {
-    if (!isTargetPage()) return;
-    
-    // Проверяем элементы для кнопок значений
-    const input = document.evaluate(
-      '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[1]/input',
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
+  async function checkElements() {
+    if (isTargetPage()) {
+      if (features.valueButtons) {
+        const input = document.evaluate(
+          '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[1]/input',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue;
 
-    const targetContainer = document.evaluate(
-      '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[2]',
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
+        const targetContainer = document.evaluate(
+          '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[2]',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue;
 
-    // Проверяем элемент для кнопок комиссий
-    const feeButton = document.evaluate(
-      '/html/body/div[1]/div[1]/div[2]/div/div/div[3]/div[1]/div[1]/div/div[1]/button',
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
+        if (input && targetContainer && !document.querySelector('.value-buttons')) {
+          createButtons(input, targetContainer);
+        }
+      }
 
-    // Создаем кнопки значений, если их еще нет
-    if (input && targetContainer && !document.querySelector('.value-buttons')) {
-      createButtons(input, targetContainer);
-    }
+      if (features.feeButtons) {
+        const feeButton = document.evaluate(
+          '/html/body/div[1]/div[1]/div[2]/div/div/div[3]/div[1]/div[1]/div/div[1]/button',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue;
 
-    // Создаем кнопки комиссий, если их еще нет
-    if (feeButton && !document.querySelector('.quick-fee-buttons')) {
-      createQuickFeeButtons();
-    }
-
-    // Продолжаем проверку, если не все элементы найдены
-    if ((!input || !targetContainer || !feeButton) && attempts < maxAttempts) {
-      attempts++;
-      setTimeout(checkElements, 100);
+        if (feeButton && !document.querySelector('.quick-fee-buttons')) {
+          createQuickFeeButtons();
+        }
+      }
     }
   }
   
@@ -169,13 +238,38 @@ function waitForElements(maxAttempts = 50) {
 // ПРЕСЕТЫ: Функции для работы с пресетами
 function loadPresets() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get('valuePresets', (data) => {
-      resolve(data.valuePresets || [
+    if (!isChromeAPIAvailable()) {
+      resolve([
         [0.5, 1, 1.5],
         [1, 2, 3],
         [2, 4, 6]
       ]);
-    });
+      return;
+    }
+
+    try {
+      chrome.storage.sync.get('valuePresets', (data) => {
+        if (chrome.runtime.lastError) {
+          resolve([
+            [0.5, 1, 1.5],
+            [1, 2, 3],
+            [2, 4, 6]
+          ]);
+          return;
+        }
+        resolve(data.valuePresets || [
+          [0.5, 1, 1.5],
+          [1, 2, 3],
+          [2, 4, 6]
+        ]);
+      });
+    } catch {
+      resolve([
+        [0.5, 1, 1.5],
+        [1, 2, 3],
+        [2, 4, 6]
+      ]);
+    }
   });
 }
 
@@ -416,13 +510,12 @@ function createPresetsMenu() {
   return menu;
 }
 
-// Функция обновления кнопок значений
+// Добавим функцию updateValueButtons
 function updateValueButtons(preset) {
   const valueButtons = document.querySelectorAll('.value-button');
   valueButtons.forEach((btn, i) => {
-    const value = preset[i];
-    btn.textContent = value;
-    btn.dataset.value = value;
+    btn.textContent = preset[i];
+    btn.dataset.value = preset[i];
   });
 }
 
@@ -590,119 +683,151 @@ async function updateButtons() {
   });
 }
 
-// Отслеживаем изменения URL
-let lastUrl = location.href;
-new MutationObserver(() => {
-  const url = location.href;
-  if (url !== lastUrl) {
-    lastUrl = url;
-    console.log('URL изменился, проверяем элементы');
-    waitForElements();
+// КНОПКИ: Функция для проверки нужной страницы
+function isTargetPage() {
+  return window.location.href.includes('/transfer') || 
+         document.querySelector('form') !== null;
+}
+
+// Добавляем функцию для проверки состояния подключения расширения
+function checkExtensionConnection() {
+  try {
+    // Пробуем получить ID расширения
+    if (!chrome.runtime.id) {
+      return false;
+    }
+    return true;
+  } catch (e) {
+    return false;
   }
-}).observe(document.body, { subtree: true, childList: true });
+}
 
-// Один общий observer для всех изменений
-const observer = new MutationObserver(() => {
-  if (isTargetPage()) {
-    // Проверяем и создаем кнопки значений
-    const input = document.evaluate(
-      '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[1]/input',
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
+// Функция для переподключения расширения
+function reconnectExtension() {
+  if (!checkExtensionConnection()) {
+    // Если соединение потеряно, пробуем восстановить через локальное хранилище
+    const features = {
+      feeButtons: localStorage.getItem('feeButtonsEnabled') === 'true',
+      sumCalculator: localStorage.getItem('sumCalculatorEnabled') === 'true',
+      valueButtons: localStorage.getItem('valueButtonsEnabled') === 'true'
+    };
 
-    const targetContainer = document.evaluate(
-      '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[2]',
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
+    // Очищаем все функции
+    Object.keys(features).forEach(feature => {
+      cleanupFeature(feature);
+    });
 
-    if (input && targetContainer && !document.querySelector('.value-buttons')) {
-      createButtons(input, targetContainer);
-    }
+    // Активируем функции, которые были включены
+    Object.entries(features).forEach(([feature, enabled]) => {
+      if (enabled) {
+        startFeature(feature);
+      }
+    });
 
-    // Проверяем и создаем кнопки комиссий
-    const feeButton = document.evaluate(
-      '/html/body/div[1]/div[1]/div[2]/div/div/div[3]/div[1]/div[1]/div/div[1]/button',
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
-
-    if (feeButton && !document.querySelector('.quick-fee-buttons')) {
-      createQuickFeeButtons();
-    }
+    // Пробуем переподключиться через 1 секунду
+    setTimeout(() => {
+      if (checkExtensionConnection()) {
+        // Если соединение восстановлено, синхронизируем состояние
+        chrome.storage.local.get(
+          ['feeButtonsEnabled', 'sumCalculatorEnabled', 'valueButtonsEnabled'],
+          function(result) {
+            Object.entries(result).forEach(([key, value]) => {
+              localStorage.setItem(key, value);
+            });
+          }
+        );
+      }
+    }, 1000);
   }
-});
+}
 
-// Наблюдаем за изменениями в DOM
-observer.observe(document.body, {
-  childList: true,
-  subtree: true
-});
-
-// Запускаем проверку при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-  if (isTargetPage()) {
-    const input = document.evaluate(
-      '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[1]/input',
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
-
-    const targetContainer = document.evaluate(
-      '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[2]',
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
-
-    if (input && targetContainer) {
-      createButtons(input, targetContainer);
+// Обновляем слушатель сообщений
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  try {
+    if (message.action === "updateFeatureState") {
+      // Сохраняем состояние в локальное хранилище
+      localStorage.setItem(`${message.feature}Enabled`, message.enabled);
+      
+      features[message.feature] = message.enabled;
+      
+      if (message.enabled) {
+        startFeature(message.feature);
+      } else {
+        cleanupFeature(message.feature);
+      }
     }
-
-    const feeButton = document.evaluate(
-      '/html/body/div[1]/div[1]/div[2]/div/div/div[3]/div[1]/div[1]/div/div[1]/button',
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
-
-    if (feeButton) {
-      createQuickFeeButtons();
-    }
+  } catch (error) {
+    console.log('Extension error:', error);
+    reconnectExtension();
   }
 });
 
-// Периодически проверяем
-setInterval(() => {
-  if (isTargetPage() && !document.querySelector('.value-buttons')) {
-    waitForElements();
+// Добавляем периодическую проверку соединения
+setInterval(reconnectExtension, 5000);
+
+// Обновляем обработчик загрузки страницы
+window.addEventListener('load', () => {
+  try {
+    chrome.storage.local.get(
+      ['feeButtonsEnabled', 'sumCalculatorEnabled', 'valueButtonsEnabled'], 
+      function(result) {
+        // Сохраняем состояния в локальное хранилище
+        Object.entries(result).forEach(([key, value]) => {
+          localStorage.setItem(key, value);
+        });
+
+        features = {
+          feeButtons: result.feeButtonsEnabled === true,
+          sumCalculator: result.sumCalculatorEnabled === true,
+          valueButtons: result.valueButtonsEnabled === true
+        };
+        
+        Object.keys(features).forEach(feature => {
+          cleanupFeature(feature);
+        });
+        
+        if (features.feeButtons) {
+          startFeature('feeButtons');
+        }
+        if (features.sumCalculator) {
+          startFeature('sumCalculator');
+        }
+        if (features.valueButtons) {
+          startFeature('valueButtons');
+        }
+      }
+    );
+  } catch (error) {
+    console.log('Extension load error:', error);
+    reconnectExtension();
   }
-}, 1000);
+});
 
 // Функция загрузки значений комиссий
 function loadFeePresets() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get('feePresets', (data) => {
-      resolve(data.feePresets || [0.004, 0.006, 0.008]);
-    });
+    try {
+      chrome.storage.sync.get('feePresets', (data) => {
+        if (chrome.runtime.lastError) {
+          resolve([0.004, 0.006, 0.008]);
+          return;
+        }
+        resolve(data.feePresets || [0.004, 0.006, 0.008]);
+      });
+    } catch (error) {
+      resolve([0.004, 0.006, 0.008]);
+    }
   });
 }
 
 // Функция сохранения значений комиссий
 function saveFeePresets(presets) {
   return new Promise((resolve) => {
-    chrome.storage.sync.set({ feePresets: presets }, resolve);
+    try {
+      chrome.storage.sync.set({ feePresets: presets }, resolve);
+    } catch (error) {
+      resolve();
+    }
   });
 }
 
@@ -770,6 +895,16 @@ async function createQuickFeeButtons() {
     `;
 
     button.onclick = async () => {
+      // Обновляем подсветку кнопок
+      document.querySelectorAll('.quick-fee-button').forEach(btn => {
+        btn.style.backgroundColor = 'rgb(39 41 67)';
+      });
+      button.style.backgroundColor = 'rgb(65 67 119)';
+      
+      // Сохраняем активную комиссию
+      await saveActiveFee(fee);
+
+      // Находим и кликаем по кнопке настройки комиссии
       const feeButton = document.evaluate(
         '/html/body/div[1]/div[1]/div[2]/div/div/div[3]/div[1]/div[1]/div/div[1]/button',
         document,
@@ -779,19 +914,11 @@ async function createQuickFeeButtons() {
       ).singleNodeValue;
 
       if (feeButton) {
-        // Обновляем подсветку кнопок
-        document.querySelectorAll('.quick-fee-button').forEach(btn => {
-          btn.style.backgroundColor = 'rgb(39 41 67)';
-        });
-        button.style.backgroundColor = 'rgb(65 67 119)';
-        
-        // Сохраняем активную комиссию
-        await saveActiveFee(fee);
-
-        // Устанавливаем значение
         feeButton.click();
+        
+        // Ждем появления инпута в модальном окне
         setTimeout(() => {
-          const input = document.evaluate(
+          const modalInput = document.evaluate(
             '/html/body/div[1]/div[1]/div[2]/div/div/div[3]/div[1]/div[1]/div/div[2]/div/div[3]/div[3]/div/div/input',
             document,
             null,
@@ -799,9 +926,12 @@ async function createQuickFeeButtons() {
             null
           ).singleNodeValue;
 
-          if (input) {
-            input.value = fee;
-            input.dispatchEvent(new Event('input', { bubbles: true }));
+          if (modalInput) {
+            // Устанавливаем значение
+            modalInput.value = fee;
+            modalInput.dispatchEvent(new Event('input', { bubbles: true }));
+            
+            // Ждем немного и нажимаем кнопку сохранения
             setTimeout(() => {
               const saveButton = document.evaluate(
                 '/html/body/div[1]/div[1]/div[2]/div/div/div[3]/div[1]/div[1]/div/div[2]/div/button',
@@ -810,7 +940,10 @@ async function createQuickFeeButtons() {
                 XPathResult.FIRST_ORDERED_NODE_TYPE,
                 null
               ).singleNodeValue;
-              if (saveButton) saveButton.click();
+              
+              if (saveButton) {
+                saveButton.click();
+              }
             }, 100);
           }
         }, 100);
@@ -953,4 +1086,131 @@ function createFeeSettingsMenu() {
 
   document.body.appendChild(menu);
   return menu;
+}
+
+// Добавляем новый observer для отслеживания появления элементов
+const featureObserver = new MutationObserver(() => {
+  if (features.sumCalculator || features.valueButtons) {
+    // Проверяем, находимся ли мы на нужной странице
+    if (isTargetPage()) {
+      if (features.sumCalculator) {
+        startFeature('sumCalculator');
+      }
+      if (features.valueButtons) {
+        const input = document.evaluate(
+          '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[1]/input',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue;
+
+        const targetContainer = document.evaluate(
+          '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[2]',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue;
+
+        if (input && targetContainer && !document.querySelector('.value-buttons')) {
+          createButtons(input, targetContainer);
+        }
+      }
+    }
+  }
+});
+
+// Запускаем наблюдение за изменениями в DOM
+featureObserver.observe(document.body, {
+  childList: true,
+  subtree: true
+});
+
+// Добавляем observer для кнопок комиссий
+const feeButtonsObserver = new MutationObserver(() => {
+  if (features.feeButtons) {
+    const feeButton = document.evaluate(
+      '/html/body/div[1]/div[1]/div[2]/div/div/div[3]/div[1]/div[1]/div/div[1]/button',
+      document,
+      null,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+    ).singleNodeValue;
+    
+    if (feeButton && !document.querySelector('.quick-fee-buttons')) {
+      createQuickFeeButtons();
+    }
+  }
+});
+
+// Запускаем наблюдение за изменениями в DOM для кнопок комиссий
+feeButtonsObserver.observe(document.body, {
+  childList: true,
+  subtree: true
+});
+
+// Обновляем функцию startFeature
+function startFeature(feature) {
+  if (!features[feature]) return;
+
+  switch (feature) {
+    case 'feeButtons':
+      const feeButton = document.evaluate(
+        '/html/body/div[1]/div[1]/div[2]/div/div/div[3]/div[1]/div[1]/div/div[1]/button',
+        document,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+      ).singleNodeValue;
+      
+      if (feeButton && !document.querySelector('.quick-fee-buttons')) {
+        createQuickFeeButtons();
+      }
+      break;
+      
+    case 'sumCalculator':
+      if (!window.sumUpdateInterval) {
+        window.sumUpdateInterval = setInterval(updateAllSums, 100);
+      }
+      if (!window.sumObserver) {
+        window.sumObserver = new MutationObserver(() => {
+          if (features.sumCalculator) {
+            updateAllSums();
+          }
+        });
+        window.sumObserver.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          characterData: true
+        });
+      }
+      updateAllSums();
+      break;
+      
+    case 'valueButtons':
+      if (isTargetPage()) {
+        const input = document.evaluate(
+          '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[1]/input',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue;
+
+        const targetContainer = document.evaluate(
+          '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[2]',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue;
+
+        if (input && targetContainer && !document.querySelector('.value-buttons')) {
+          createButtons(input, targetContainer);
+        }
+      }
+      break;
+  }
 } 
