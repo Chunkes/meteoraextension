@@ -284,7 +284,10 @@ let activePresetIndex = 0;
 
 // ПРЕСЕТЫ: Создание меню настроек
 function createPresetsMenu() {
-  const menu = document.createElement('div');
+  let menu = document.querySelector('.presets-menu');
+  if (menu) return menu;
+
+  menu = document.createElement('div');
   menu.className = 'presets-menu';
   menu.style.cssText = `
     position: fixed;
@@ -500,7 +503,32 @@ function createPresetsMenu() {
     menu.style.display = 'none';
     
     // Обновляем значения кнопок текущего пресета
-    updateValueButtons(newPresets[activePresetIndex]);
+    const valueButtons = document.querySelectorAll('.value-button');
+    const currentPreset = newPresets[activePresetIndex];
+    
+    valueButtons.forEach((btn, i) => {
+      const value = currentPreset[i];
+      btn.textContent = value;
+      btn.dataset.value = value;
+      
+      // Обновляем обработчик клика
+      btn.onclick = (e) => {
+        e.preventDefault();
+        const input = document.evaluate(
+          '/html/body/div[1]/div[1]/div[3]/div/div[2]/div/div[2]/div[2]/div[2]/form/div[1]/div[2]/div[2]/div[1]/input',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue;
+        
+        if (input) {
+          input.value = value;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          input.focus();
+        }
+      };
+    });
   };
 
   menu.querySelector('.close-menu').onclick = () => {
@@ -689,119 +717,109 @@ function isTargetPage() {
          document.querySelector('form') !== null;
 }
 
-// Добавляем функцию для проверки состояния подключения расширения
+// Обновляем функцию проверки состояния подключения расширения
 function checkExtensionConnection() {
   try {
-    // Пробуем получить ID расширения
-    if (!chrome.runtime.id) {
-      return false;
-    }
-    return true;
-  } catch (e) {
+    return typeof chrome !== 'undefined' && 
+           chrome.runtime && 
+           chrome.runtime.id;
+  } catch {
     return false;
   }
 }
 
-// Функция для переподключения расширения
+// Обновляем функцию reconnectExtension
 function reconnectExtension() {
   if (!checkExtensionConnection()) {
-    // Если соединение потеряно, пробуем восстановить через локальное хранилище
-    const features = {
+    const savedFeatures = {
       feeButtons: localStorage.getItem('feeButtonsEnabled') === 'true',
       sumCalculator: localStorage.getItem('sumCalculatorEnabled') === 'true',
       valueButtons: localStorage.getItem('valueButtonsEnabled') === 'true'
     };
 
-    // Очищаем все функции
-    Object.keys(features).forEach(feature => {
-      cleanupFeature(feature);
-    });
-
-    // Активируем функции, которые были включены
-    Object.entries(features).forEach(([feature, enabled]) => {
+    Object.entries(savedFeatures).forEach(([feature, enabled]) => {
       if (enabled) {
-        startFeature(feature);
+        try {
+          startFeature(feature);
+        } catch (error) {
+          console.log(`Error starting feature ${feature}:`, error);
+        }
       }
     });
-
-    // Пробуем переподключиться через 1 секунду
-    setTimeout(() => {
-      if (checkExtensionConnection()) {
-        // Если соединение восстановлено, синхронизируем состояние
-        chrome.storage.local.get(
-          ['feeButtonsEnabled', 'sumCalculatorEnabled', 'valueButtonsEnabled'],
-          function(result) {
-            Object.entries(result).forEach(([key, value]) => {
-              localStorage.setItem(key, value);
-            });
-          }
-        );
-      }
-    }, 1000);
   }
 }
 
-// Обновляем слушатель сообщений
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  try {
-    if (message.action === "updateFeatureState") {
-      // Сохраняем состояние в локальное хранилище
-      localStorage.setItem(`${message.feature}Enabled`, message.enabled);
-      
-      features[message.feature] = message.enabled;
-      
-      if (message.enabled) {
-        startFeature(message.feature);
-      } else {
-        cleanupFeature(message.feature);
+// Обновляем слушатель сообщений с обработкой ошибок
+try {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    try {
+      if (message.action === "updateFeatureState") {
+        localStorage.setItem(`${message.feature}Enabled`, message.enabled);
+        features[message.feature] = message.enabled;
+        
+        if (message.enabled) {
+          startFeature(message.feature);
+        } else {
+          cleanupFeature(message.feature);
+        }
       }
+    } catch (error) {
+      console.log('Message handling error:', error);
+      reconnectExtension();
     }
-  } catch (error) {
-    console.log('Extension error:', error);
-    reconnectExtension();
-  }
-});
-
-// Добавляем периодическую проверку соединения
-setInterval(reconnectExtension, 5000);
+  });
+} catch (error) {
+  console.log('Runtime listener setup error:', error);
+  reconnectExtension();
+}
 
 // Обновляем обработчик загрузки страницы
 window.addEventListener('load', () => {
   try {
-    chrome.storage.local.get(
-      ['feeButtonsEnabled', 'sumCalculatorEnabled', 'valueButtonsEnabled'], 
-      function(result) {
-        // Сохраняем состояния в локальное хранилище
-        Object.entries(result).forEach(([key, value]) => {
-          localStorage.setItem(key, value);
-        });
+    if (checkExtensionConnection()) {
+      chrome.storage.local.get(
+        ['feeButtonsEnabled', 'sumCalculatorEnabled', 'valueButtonsEnabled'], 
+        function(result) {
+          try {
+            Object.entries(result).forEach(([key, value]) => {
+              localStorage.setItem(key, value);
+            });
 
-        features = {
-          feeButtons: result.feeButtonsEnabled === true,
-          sumCalculator: result.sumCalculatorEnabled === true,
-          valueButtons: result.valueButtonsEnabled === true
-        };
-        
-        Object.keys(features).forEach(feature => {
-          cleanupFeature(feature);
-        });
-        
-        if (features.feeButtons) {
-          startFeature('feeButtons');
+            features = {
+              feeButtons: result.feeButtonsEnabled === true,
+              sumCalculator: result.sumCalculatorEnabled === true,
+              valueButtons: result.valueButtonsEnabled === true
+            };
+            
+            Object.entries(features).forEach(([feature, enabled]) => {
+              if (enabled) {
+                startFeature(feature);
+              }
+            });
+          } catch (error) {
+            console.log('Feature initialization error:', error);
+          }
         }
-        if (features.sumCalculator) {
-          startFeature('sumCalculator');
-        }
-        if (features.valueButtons) {
-          startFeature('valueButtons');
-        }
-      }
-    );
+      );
+    } else {
+      reconnectExtension();
+    }
   } catch (error) {
-    console.log('Extension load error:', error);
+    console.log('Load handler error:', error);
     reconnectExtension();
   }
 });
+
+// Обновляем периодическую проверку
+setInterval(() => {
+  try {
+    if (!checkExtensionConnection()) {
+      reconnectExtension();
+    }
+  } catch (error) {
+    console.log('Connection check error:', error);
+  }
+}, 5000);
 
 // Функция загрузки значений комиссий
 function loadFeePresets() {
@@ -1044,7 +1062,7 @@ function createFeeSettingsMenu() {
           border-radius: 4px;
           cursor: pointer;
           font-size: 13px;
-        ">Save</button>
+        ">Save & Reload</button>
         <button class="close-menu" style="
           padding: 6px 12px;
           background: rgba(255, 255, 255, 0.1);
@@ -1073,11 +1091,8 @@ function createFeeSettingsMenu() {
     await saveFeePresets(newPresets);
     menu.style.display = 'none';
     
-    // Обновляем кнопки
-    const buttons = document.querySelectorAll('.quick-fee-button');
-    buttons.forEach((btn, i) => {
-      if (i < newPresets.length) btn.textContent = newPresets[i];
-    });
+    // Перезагружаем страницу
+    window.location.reload();
   };
 
   menu.querySelector('.close-menu').onclick = () => {
