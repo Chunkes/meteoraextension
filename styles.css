@@ -1,35 +1,53 @@
 .value-buttons {
   display: flex;
-  flex-direction: row;
-  gap: 9px;
-  padding: 5px;
+  gap: 10px;
   position: absolute;
-  right: 100%; /* Размещаем слева от элемента */
+  z-index: 1000;
   top: 50%;
+  right: 100%;
   transform: translateY(-50%);
-  margin-right: 10px; /* Отступ от элемента */
+  margin-right: 8px;
 }
 
 .value-button {
   display: flex;
   align-items: center;
-  justify-content: center; /* Центрируем текст */
-  height: 1.5rem; /* h-6 */
-  width: 40px; /* Фиксированная ширина */
-  padding-left: .5rem; /* px-2 */
-  padding-right: .5rem;
-  border-radius: 9999px; /* rounded-full */
-  font-size: 10px; /* text-[10px] */
-  font-weight: 600; /* font-semibold */
+  justify-content: center;
+  height: 1.5rem;
+  width: 2.5rem;
+  padding: 0 0.5rem;
+  border: none;
+  border-radius: 9999px;
+  background-color: rgb(39 41 67);
+  color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
-  color: #7c7d8d;
-  background-color: rgb(39 41 67); /* dark:bg-[#272943] */
-  position: relative;
-  /* Свечение голубым цветом */
-  box-shadow: 0 0 5px rgba(6, 174, 212, 0.3),
-              0 0 10px rgba(6, 174, 212, 0.2),
-              0 0 15px rgba(6, 174, 212, 0.1);
-  transition: all 0.3s ease;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.preset-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+}
+
+.preset-button {
+  display: flex;
+  align-items: center;
+  height: 1.5rem;
+  padding: 0 0.5rem;
+  border: none;
+  border-radius: 9999px;
+  background-color: rgb(39 41 67);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.preset-button.active {
+  background-color: rgb(55 57 99);
 }
 
 /* Стили для темной темы */
